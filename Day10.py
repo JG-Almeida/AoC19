@@ -1,6 +1,7 @@
 import math
 
 
+# a class for asteroids
 class Asteroid:
     def __init__(self, x, y):
         self.x = x
@@ -102,19 +103,25 @@ def main():
     # Open Day 10 puzzle input
     file_path = "day10.txt"
 
+    # parse file
     asteroid_locations = get_asteroid_locations(file_path)
 
+    # puzzle 1
     monitoring_station_angles, monitoring_station = puzzle1(asteroid_locations)
 
+    # puzzle 2
     puzzle2(monitoring_station_angles, monitoring_station)
 
 
 # print puzzle 1 solution
+# return most visible asteroid for puzzle 2
 def puzzle1(asteroid_locations):
     max_asteroids = 0
     most_visible_angle = {}
     most_visible = Asteroid(0, 0)
 
+    # get the asteroid with the most angles
+    # each angle is an asteroid in line of sight
     for i in range(len(asteroid_locations)):
         angle = get_angles(asteroid_locations, asteroid_locations[i])
         value = len(angle)
@@ -128,6 +135,7 @@ def puzzle1(asteroid_locations):
     return most_visible_angle, most_visible
 
 
+# print puzzle 2 solution
 def puzzle2(monitoring_station_angles, monitoring_station):
     count_destroyed = 0
     destroyed = []
@@ -140,7 +148,7 @@ def puzzle2(monitoring_station_angles, monitoring_station):
             closest_asteroid = Asteroid(-1, -1)
             min_dist = -1
 
-            # for each asteroid at an angle
+            # for each asteroid at an angle get closest that is not destroyed
             for i in monitoring_station_angles[j]:
                 if i not in destroyed:
                     value = monitoring_station.distance(i)
@@ -149,11 +157,12 @@ def puzzle2(monitoring_station_angles, monitoring_station):
                         min_dist = value
                         closest_asteroid = i
 
+            # destroy asteroid, by tagging it as destroyed and increasing the counter
             if closest_asteroid.x != -1 and closest_asteroid.y != -1:
                 destroyed.append(closest_asteroid)
                 count_destroyed = count_destroyed + 1
-                # print(count_destroyed, closest_asteroid)
 
+                # is it asteroid number 200?
                 if count_destroyed == 200:
                     lucky_number_200 = closest_asteroid
                     break
@@ -161,15 +170,18 @@ def puzzle2(monitoring_station_angles, monitoring_station):
     print("Puzzle 2: ", lucky_number_200.x * 100 + lucky_number_200.y)
 
 
+# return dictionary with all the angles of a given asteroid to all other asteroids
 def get_angles(asteroid_list, asteroid):
     angles = {}
 
+    # go over every asteroid
     for ast in asteroid_list:
 
+        # if it's not itself
         if asteroid != ast:
-
             angle = asteroid.angle(ast)
 
+            # new angle or append to existing
             if angle in angles:
                 angles[angle].append(ast)
             else:
@@ -178,6 +190,8 @@ def get_angles(asteroid_list, asteroid):
     return angles
 
 
+# open file and parse asteroids into a list
+# return list of asteroids
 def get_asteroid_locations(file_path):
     # open file
     file = open(file_path, "r")
@@ -186,6 +200,7 @@ def get_asteroid_locations(file_path):
 
     asteroid_locations = []
 
+    # iterate over file
     for line in file:
         for position in line:
             if position == '#':

@@ -1,5 +1,11 @@
 # This is the computer that runs the Intcode programs
-def run_program(program, inputs=[], outputs=[], pointer=0, relative_base=[0]):
+def run_program(program, inputs=None, outputs=None, pointer=0, relative_base=None):
+    if outputs is None:
+        outputs = []
+    if inputs is None:
+        inputs = []
+    if relative_base is None:
+        relative_base = [0]
     i = pointer
 
     # program runs until it finds opcode 99 or finds an error
