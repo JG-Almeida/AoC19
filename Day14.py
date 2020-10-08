@@ -1,3 +1,4 @@
+# TODO: rename product to chemical
 # Reaction object, with outcome, outcome quantity, products necessary and quantity of products necessary
 class Reaction:
     def __init__(self, outcome, quantity, products, quantity_products):
@@ -10,8 +11,14 @@ class Reaction:
         return f"Reaction({self.outcome!r}, {self.quantity!r}, {self.products!r}, {self.quantity_products!r})"
 
     def __str__(self):
-        return f"Reaction Instance Object, (x, y) => ({self.outcome!r}, {self.quantity!r}, " \
-               f"{self.products!r}, {self.quantity_products!r})"
+        return f"Reaction Instance Object, (outcome, quantity, input chemicals, quantity of input chemicals) => " \
+               f"({self.outcome!r}, {self.quantity!r}, {self.products!r}, {self.quantity_products!r})"
+
+    def get_quantity(self, product):
+        for x in range(len(self.products)):
+            if self.products[x] == product:
+                return self.quantity_products[x]
+        return 0
 
 
 def main():
@@ -43,7 +50,7 @@ def parse_puzzle_input(file):
                 break
 
             quantity_products.append(int(line[x]))
-            products.append(line[x + 1])
+            products.append(line[x + 1].strip(","))
 
         reactions.append(Reaction(line[-1].strip("\n"), int(line[-2]), products, quantity_products))
 
@@ -55,13 +62,45 @@ def parse_puzzle_input(file):
 
 def puzzle1(reactions):
     reactions_index = {}
-    index = 0
 
     for x in reactions:
-        reactions_index[x.outcome] = index
-        index = index + 1
+        reactions_index[x.outcome] = x.products
 
-    print(reactions_index)
+    reactions_index['ORE'] = []
+
+    level = get_level_of_product(reactions_index, 'FUEL')
+    needs = {}
+    max_level = list(level.values())[-1]
+
+    for x in range(0, max_level):
+        for y in level:
+            if x < level[y]:
+                break
+
+            for z in reactions:
+                if z.outcome == y:
+                    if y not in needs:
+                        for k in z.products:
+                            needs[k] = z.get_quantity(k)
+    print(needs)
+
+def get_level_of_product(reactions, root):
+    discovered = [root]
+    queue = [root]
+    level = {root: 0}
+
+    while queue:
+        v = queue.pop(0)
+
+        for edge in reactions[v]:
+            if edge not in discovered:
+                level[edge] = level[v] + 1
+                queue.append(edge)
+                discovered.append(edge)
+            else:
+                level[edge] = level[v] + 1
+
+    return level
 
 
 if __name__ == '__main__':
