@@ -1,3 +1,6 @@
+import math
+
+
 # TODO: rename product to chemical
 # Reaction object, with outcome, outcome quantity, products necessary and quantity of products necessary
 class Reaction:
@@ -34,7 +37,7 @@ def parse_puzzle_input(file):
     # Open file
     f = open(file, "r")
 
-    reactions = []
+    reactions = {}
 
     # Read line and reaction list
     for line in f:
@@ -52,7 +55,9 @@ def parse_puzzle_input(file):
             quantity_products.append(int(line[x]))
             products.append(line[x + 1].strip(","))
 
-        reactions.append(Reaction(line[-1].strip("\n"), int(line[-2]), products, quantity_products))
+        reactions[line[-1].strip("\n")] = Reaction(line[-1].strip("\n"), int(line[-2]), products, quantity_products)
+
+    reactions['ORE'] = Reaction('ORE', 1, [], [])
 
     # close file
     f.close()
@@ -61,46 +66,88 @@ def parse_puzzle_input(file):
 
 
 def puzzle1(reactions):
-    reactions_index = {}
+    level = {'FUEL': 0}
+    get_level_of_product(reactions, 'FUEL', level)
 
-    for x in reactions:
-        reactions_index[x.outcome] = x.products
+    max_level = 0
 
-    reactions_index['ORE'] = []
+    for x in level.values():
+        if x > max_level:
+            max_level = x
 
-    level = get_level_of_product(reactions_index, 'FUEL')
-    needs = {}
-    max_level = list(level.values())[-1]
+    needs = {'FUEL': 1}
+    leftovers = {}
 
     for x in range(0, max_level):
         for y in level:
-            if x < level[y]:
-                break
+            if x == level[y]:
+                if y in needs:
+                    needs[y] = math.ceil(needs[y] / reactions[y].quantity)
+                    leftovers[y] = needs[y] % reactions[y].quantity
 
-            for z in reactions:
-                if z.outcome == y:
-                    if y not in needs:
-                        for k in z.products:
-                            needs[k] = z.get_quantity(k)
-    print(needs)
+                for z in reactions[y].products:
+                    if z in needs:
+                        needs[z] = needs[z] + reactions[y].get_quantity(z) * needs[y]
+                    else:
+                        needs[z] = reactions[y].get_quantity(z) * needs[y]
+    print("Puzzle 1: ", needs['ORE'])
 
-def get_level_of_product(reactions, root):
-    discovered = [root]
-    queue = [root]
-    level = {root: 0}
+    puzzle2(reactions, leftovers, needs['ORE'], level, max_level)
 
-    while queue:
-        v = queue.pop(0)
 
-        for edge in reactions[v]:
-            if edge not in discovered:
-                level[edge] = level[v] + 1
-                queue.append(edge)
-                discovered.append(edge)
+def get_level_of_product(reactions, root, level):
+    if root == 'ORE':
+        return None
+    for x in reactions[root].products:
+        if x in level:
+            if level[x] <= level[root]:
+                level[x] = level[root] + 1
+        else:
+            level[x] = level[root] + 1
+
+        get_level_of_product(reactions, x, level)
+
+
+def puzzle2(reactions, leftovers_one_fuel, ore_needed, level, max_level):
+    total_ore = 1000000000000
+    total_fuel = 0
+    leftovers = {}
+
+    while total_ore > ore_needed:
+        total_fuel = total_fuel + math.ceil(total_ore / ore_needed)
+
+        for x in leftovers_one_fuel:
+            if x not in leftovers:
+                leftovers[x] = leftovers_one_fuel[x] * math.ceil(total_ore / ore_needed)
             else:
-                level[edge] = level[v] + 1
+                leftovers[x] = leftovers[x] + leftovers_one_fuel[x] * math.ceil(total_ore / ore_needed)
 
-    return level
+        leftovers['ORE'] = total_ore % ore_needed
+
+        leftovers_to_ore(reactions, leftovers, level, max_level)
+
+        total_ore = leftovers['ORE']
+        print(leftovers)
+
+    print("Puzzle 2: ", total_fuel)
+
+
+def leftovers_to_ore(reactions, leftovers, level, max_level):
+    for z in range(0, max_level):
+        for x in leftovers:
+            if level[x] == z:
+                if leftovers[x] == 0:
+                    continue
+                else:
+                    for y in reactions[x].products:
+                        if y in leftovers:
+                            leftovers[y] = leftovers[y] + math.floor(leftovers[x] / reactions[x].quantity) \
+                                           * reactions[x].get_quantity(y)
+                        else:
+                            leftovers[y] = math.floor(leftovers[x] / reactions[x].quantity) \
+                                           * reactions[x].get_quantity(y)
+                            leftovers[x] = math.ceil(leftovers[x] % reactions[x].quantity)
+                    leftovers[x] = math.ceil(leftovers[x] % reactions[x].quantity)
 
 
 if __name__ == '__main__':
