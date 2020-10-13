@@ -187,3 +187,21 @@ def run_program(program, inputs=None, outputs=None, pointer=0, relative_base=Non
             return -1
 
         return "ERROR - Incorrect Opcode !!!"
+
+
+# parse puzzle input
+# param: file - file name
+# return: intcode program in a list
+def parse_puzzle_input(file):
+    # Open file with puzzle input
+    f = open(file, "r")
+
+    # Read line and construct a list of integers
+    line = f.readline()
+    pz_input = line.split(',')
+    pz_input = list(map(int, pz_input))
+
+    # close file
+    f.close()
+
+    return pz_input

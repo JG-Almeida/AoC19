@@ -18,7 +18,7 @@ class Tile:
 def main():
     file_name = "day13.txt"
 
-    pz_input = parse_puzzle_input(file_name)
+    pz_input = intcode_computer.parse_puzzle_input(file_name)
     tiles = puzzle1(pz_input.copy())
     draw_screen(tiles)
 
