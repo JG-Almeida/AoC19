@@ -26,13 +26,13 @@ class Reaction:
 
 def main():
     # Day 14 puzzle input
-    file_name = "day14_example.txt"
+    file_name = "day14.txt"
 
     reactions = parse_puzzle_input(file_name)
 
-    ore_for_one_fuel, leftovers, level, max_level = puzzle1(reactions)
+    level, max_level = puzzle1(reactions)
 
-    puzzle2(reactions, leftovers, ore_for_one_fuel, level, max_level)
+    puzzle2(reactions, level, max_level)
 
 
 # parse puzzle input, return reaction list
@@ -82,17 +82,16 @@ def puzzle1(reactions):
         if x > max_level:
             max_level = x
 
-    ore_for_one_fuel, leftovers = get_ore_for_one_fuel(reactions, level, max_level)
+    ore_for_one_fuel = get_ore_for_one_fuel(reactions, level, max_level, 1)
 
     print("Puzzle 1: ", ore_for_one_fuel)
 
-    return ore_for_one_fuel, leftovers, level, max_level
+    return level, max_level
 
 
 # get ore needed to create one fuel, get also leftover chemicals
-def get_ore_for_one_fuel(reactions, level, max_level):
-    needs = {'FUEL': 1}
-    leftovers = {}
+def get_ore_for_one_fuel(reactions, level, max_level, fuel_needed):
+    needs = {'FUEL': fuel_needed}
 
     # go through every level
     for x in range(0, max_level):
@@ -103,17 +102,6 @@ def get_ore_for_one_fuel(reactions, level, max_level):
 
                 # if chemical being analysed will no longer be user for another's reactions due to level order
                 if y in needs:
-                    # calculate leftovers
-                    if y in leftovers:
-                        if needs[y] >= reactions[y].quantity:
-                            leftovers[y] = leftovers[y] + (needs[y] % reactions[y].quantity)
-                        else:
-                            leftovers[y] = (reactions[y].quantity - needs[y])
-                    else:
-                        if needs[y] >= reactions[y].quantity:
-                            leftovers[y] = needs[y] % reactions[y].quantity
-                        else:
-                            leftovers[y] = (reactions[y].quantity - needs[y])
                     # needs value will me amount of reactions caused
                     needs[y] = math.ceil(needs[y] / reactions[y].quantity)
 
@@ -124,7 +112,7 @@ def get_ore_for_one_fuel(reactions, level, max_level):
                     else:
                         needs[z] = reactions[y].get_quantity(z) * needs[y]
 
-    return needs['ORE'], leftovers
+    return needs['ORE']
 
 
 # calculate level depth of each chemical based on dependencies to other chemicals
@@ -144,52 +132,28 @@ def get_level_of_chemical(reactions, root, level):
         get_level_of_chemical(reactions, x, level)
 
 
-# TODO: there seems to be some miscalculation along the way or perhaps flawed logic
-def puzzle2(reactions, leftovers_one_fuel, ore_needed, level, max_level):
+# print solution for puzzle 2
+def puzzle2(reactions, level, max_level):
     total_ore = 1000000000000
-    total_fuel = 0
-    leftovers = {}
+    left = 0
+    right = 1000000000000
+    middle = 0
 
-    while total_ore > ore_needed:
+    # search for solution using a binary search
+    while left <= right:
 
-        # total fuel is current fuel plus current ore divided by the amount of ore necessary for for one fuel
-        total_fuel = total_fuel + math.floor(total_ore / ore_needed)
+        middle = math.floor((left + right) / 2)
 
-        # multiply leftovers for a single fuel by the amount of fuel created
-        for x in leftovers_one_fuel:
-            if x not in leftovers:
-                leftovers[x] = leftovers_one_fuel[x] * math.floor(total_ore / ore_needed)
-            else:
-                leftovers[x] = leftovers[x] + leftovers_one_fuel[x] * math.floor(total_ore / ore_needed)
+        ore_needed = get_ore_for_one_fuel(reactions, level, max_level, middle)
 
-        # leftover ore is the remainder of the division
-        leftovers['ORE'] = total_ore % ore_needed
+        if ore_needed < total_ore:
+            left = middle + 1
+        elif ore_needed > total_ore:
+            right = middle - 1
+        else:
+            break
 
-        # transform leftovers back to ore as much as possible
-        leftovers_to_ore(reactions, leftovers, level, max_level)
-
-        # current ore to create fuel will be the leftover ore plus ore from leftovers
-        total_ore = leftovers['ORE']
-
-    print("Puzzle 2: ", total_fuel)
-
-
-# reverts leftovers into ore
-def leftovers_to_ore(reactions, leftovers, level, max_level):
-    
-    for z in range(0, max_level):
-        for x in leftovers:
-            if level[x] == z:
-                if leftovers[x] == 0:
-                    continue
-                for y in reactions[x].chemicals:
-                    if y in leftovers:
-                        leftovers[y] = leftovers[y] + math.floor(leftovers[x] / reactions[x].quantity) \
-                                       * reactions[x].get_quantity(y)
-                    else:
-                        leftovers[y] = math.floor(leftovers[x] / reactions[x].quantity) \
-                                       * reactions[x].get_quantity(y)
-                leftovers[x] = leftovers[x] % reactions[x].quantity
+    print("Puzzle 2: ", middle - 1)
 
 
 if __name__ == '__main__':
